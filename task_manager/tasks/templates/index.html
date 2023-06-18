@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Task Manager</title>
+  <style>
+    /* Stylizacja wyglądu */
+    .task-list {
+      list-style-type: none;
+      padding: 0;
+    }
+    .task-item {
+      display: flex;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .task-item input[type="checkbox"] {
+      margin-right: 5px;
+    }
+    .task-item button {
+      margin-left: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Task Manager</h1>
+
+  <h2>Add Task</h2>
+  <input type="text" id="task-input" placeholder="Enter task name">
+  <button onclick="addTask()">Add</button>
+
+  <h2>Task List</h2>
+  <ul id="task-list" class="task-list"></ul>
+
+  <script>
+    // Funkcja do dodawania zadania do listy
+    function addTask() {
+      const taskInput = document.getElementById('task-input');
+      const taskName = taskInput.value.trim();
+      
+      if (taskName !== '') {
+        const taskList = document.getElementById('task-list');
+
+        // Tworzenie elementów HTML dla zadania
+        const listItem = document.createElement('li');
+        listItem.classList.add('task-item');
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        const taskText = document.createElement('span');
+        taskText.textContent = taskName;
+        const deleteButton = document.createElement('button');
+        deleteButton.textContent = 'Delete';
+        deleteButton.addEventListener('click', () => {
+          listItem.remove(); // Usunięcie zadania po kliknięciu przycisku "Delete"
+        });
+
+        // Dodawanie elementów do listy
+        listItem.appendChild(checkbox);
+        listItem.appendChild(taskText);
+        listItem.appendChild(deleteButton);
+        taskList.appendChild(listItem);
+
+        // Wyczyszczenie pola wprowadzania po dodaniu zadania
+        taskInput.value = '';
+      }
+    }
+  </script>
+</body>
+</html>
