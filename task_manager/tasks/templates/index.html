@@ -4,14 +4,28 @@
   <title>Task Manager</title>
   <style>
     /* Stylizacja wyglądu */
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background-image: url("/static/background.jpg");
+      background-size: cover;
+      background-repeat: no-repeat;
+      color: white;
+    }
     .task-list {
       list-style-type: none;
       padding: 0;
+      color: white;
     }
     .task-item {
       display: flex;
       align-items: center;
       margin-bottom: 10px;
+      color: white;
+      border: 1px solid black;
+      padding: 5px;
     }
     .task-item input[type="checkbox"] {
       margin-right: 5px;
@@ -19,23 +33,31 @@
     .task-item button {
       margin-left: 10px;
     }
+    .task-item.completed {
+      text-decoration: line-through;
+    }
   </style>
 </head>
 <body>
-  <h1>Task Manager</h1>
+  <div>
+    <h1 style="text-align: center;">TASK MANAGER</h1>
 
-  <h2>Add Task</h2>
-  <input type="text" id="task-input" placeholder="Enter task name">
-  <button onclick="addTask()">Add</button>
+    <h2 style="color: white;">Add Task</h2>
+    <input type="text" id="task-input" placeholder="Enter task name">
+    <input type="date" id="date-input">
+    <button onclick="addTask()">Add</button>
 
-  <h2>Task List</h2>
-  <ul id="task-list" class="task-list"></ul>
+    <h2 style="color: white;">Task List</h2>
+    <ul id="task-list" class="task-list"></ul>
+  </div>
 
   <script>
     // Funkcja do dodawania zadania do listy
     function addTask() {
       const taskInput = document.getElementById('task-input');
       const taskName = taskInput.value.trim();
+      const dateInput = document.getElementById('date-input');
+      const taskDate = dateInput.value;
       
       if (taskName !== '') {
         const taskList = document.getElementById('task-list');
@@ -45,8 +67,13 @@
         listItem.classList.add('task-item');
         const checkbox = document.createElement('input');
         checkbox.type = 'checkbox';
+        checkbox.addEventListener('change', () => {
+          markTaskAsCompleted(checkbox);
+        });
         const taskText = document.createElement('span');
         taskText.textContent = taskName;
+        const taskDateElement = document.createElement('span');
+        taskDateElement.textContent = taskDate;
         const deleteButton = document.createElement('button');
         deleteButton.textContent = 'Delete';
         deleteButton.addEventListener('click', () => {
@@ -56,13 +83,40 @@
         // Dodawanie elementów do listy
         listItem.appendChild(checkbox);
         listItem.appendChild(taskText);
+        listItem.appendChild(taskDateElement);
         listItem.appendChild(deleteButton);
         taskList.appendChild(listItem);
 
-        // Wyczyszczenie pola wprowadzania po dodaniu zadania
+        // Wyczyszczenie pól wprowadzania po dodaniu zadania
         taskInput.value = '';
+        dateInput.value = '';
       }
     }
+
+    // Funkcja do zaznaczania zadania jako wykonane
+    function markTaskAsCompleted(checkbox) {
+      const listItem = checkbox.parentNode;
+      if (checkbox.checked) {
+        listItem.classList.add('completed');
+      } else {
+        listItem.classList.remove('completed');
+      }
+    }
+
+    // Ustawienie domyślnej wartości dzisiejszej daty
+    const today = new Date();
+    const dateInput = document.getElementById('date-input');
+    const year = today.getFullYear();
+    let month = today.getMonth() + 1;
+    if (month < 10) {
+      month = '0' + month;
+    }
+    let day = today.getDate();
+    if (day < 10) {
+      day = '0' + day;
+    }
+    const formattedDate = `${year}-${month}-${day}`;
+    dateInput.value = formattedDate;
   </script>
 </body>
 </html>
