@@ -1,3 +1,4 @@
+{% block content %}
 <!DOCTYPE html>
 <html>
 <head>
@@ -44,14 +45,29 @@
 
     <h2 style="color: white;">Add Task</h2>
     <input type="text" id="task-input" placeholder="Enter task name">
-    <input type="date" id="date-input">
+    <input type="date" id="date-input" max="9999-12-31" required>
     <button onclick="addTask()">Add</button>
 
     <h2 style="color: white;">Task List</h2>
     <ul id="task-list" class="task-list"></ul>
   </div>
 
+  <dialog id="edit-dialog">
+    <h2>Edit Task</h2>
+    <input type="text" id="edit-task-input" placeholder="Enter task name">
+    <input type="date" id="edit-date-input" max="9999-12-31" required>
+    <button onclick="saveEditedTask()">Save</button>
+    <button onclick="closeEditDialog()">Cancel</button>
+  </dialog>
+
   <script>
+    let editTaskId; // Identyfikator edytowanego zadania
+
+    // Tworzenie unikalnego identyfikatora dla zadania
+    function generateId() {
+      return '_' + Math.random().toString(36).substr(2, 9);
+    }
+
     // Funkcja do dodawania zadania do listy
     function addTask() {
       const taskInput = document.getElementById('task-input');
@@ -60,11 +76,13 @@
       const taskDate = dateInput.value;
       
       if (taskName !== '') {
+        const taskId = generateId(); // Unikalny identyfikator zadania
         const taskList = document.getElementById('task-list');
 
         // Tworzenie elementów HTML dla zadania
         const listItem = document.createElement('li');
         listItem.classList.add('task-item');
+        listItem.setAttribute('data-task-id', taskId);
         const checkbox = document.createElement('input');
         checkbox.type = 'checkbox';
         checkbox.addEventListener('change', () => {
@@ -74,22 +92,42 @@
         taskText.textContent = taskName;
         const taskDateElement = document.createElement('span');
         taskDateElement.textContent = taskDate;
+        const editButton = document.createElement('button');
+        editButton.textContent = 'Edit';
+        editButton.addEventListener('click', () => {
+          openEditDialog(taskId);
+        });
         const deleteButton = document.createElement('button');
         deleteButton.textContent = 'Delete';
         deleteButton.addEventListener('click', () => {
-          listItem.remove(); // Usunięcie zadania po kliknięciu przycisku "Delete"
+          deleteTask(taskId);
         });
 
         // Dodawanie elementów do listy
         listItem.appendChild(checkbox);
         listItem.appendChild(taskText);
         listItem.appendChild(taskDateElement);
+        listItem.appendChild(editButton);
         listItem.appendChild(deleteButton);
         taskList.appendChild(listItem);
 
         // Wyczyszczenie pól wprowadzania po dodaniu zadania
         taskInput.value = '';
         dateInput.value = '';
+
+        // Ustawienie dzisiejszej daty dla kolejnego zadania
+        const today = new Date();
+        const year = today.getFullYear();
+        let month = today.getMonth() + 1;
+        if (month < 10) {
+          month = '0' + month;
+        }
+        let day = today.getDate();
+        if (day < 10) {
+          day = '0' + day;
+        }
+        const formattedDate = `${year}-${month}-${day}`;
+        dateInput.value = formattedDate;
       }
     }
 
@@ -100,6 +138,60 @@
         listItem.classList.add('completed');
       } else {
         listItem.classList.remove('completed');
+      }
+    }
+
+    // Funkcja do otwierania okna dialogowego edycji zadania
+    function openEditDialog(taskId) {
+      const listItem = document.querySelector(`[data-task-id="${taskId}"]`);
+      if (listItem) {
+        const taskText = listItem.querySelector('span');
+        const taskInput = document.getElementById('edit-task-input');
+        const dateInput = document.getElementById('edit-date-input');
+        const taskDate = listItem.querySelector('span:nth-of-type(2)').textContent;
+
+        taskInput.value = taskText.textContent;
+        dateInput.value = taskDate;
+        editTaskId = taskId;
+
+        const dialog = document.getElementById('edit-dialog');
+        dialog.showModal();
+      }
+    }
+
+    // Funkcja do zapisywania edytowanego zadania
+    function saveEditedTask() {
+      const taskInput = document.getElementById('edit-task-input');
+      const taskName = taskInput.value.trim();
+      const dateInput = document.getElementById('edit-date-input');
+      const taskDate = dateInput.value;
+      
+      if (taskName !== '') {
+        const listItem = document.querySelector(`[data-task-id="${editTaskId}"]`);
+        if (listItem) {
+          const taskText = listItem.querySelector('span');
+          const taskDateElement = listItem.querySelector('span:nth-of-type(2)');
+
+          taskText.textContent = taskName;
+          taskDateElement.textContent = taskDate;
+
+          const dialog = document.getElementById('edit-dialog');
+          dialog.close();
+        }
+      }
+    }
+
+    // Funkcja do zamykania okna dialogowego edycji zadania
+    function closeEditDialog() {
+      const dialog = document.getElementById('edit-dialog');
+      dialog.close();
+    }
+
+    // Funkcja do usuwania zadania
+    function deleteTask(taskId) {
+      const listItem = document.querySelector(`[data-task-id="${taskId}"]`);
+      if (listItem) {
+        listItem.remove();
       }
     }
 
@@ -120,3 +212,4 @@
   </script>
 </body>
 </html>
+{% endblock %}
