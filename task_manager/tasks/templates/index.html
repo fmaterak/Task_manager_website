@@ -24,10 +24,11 @@
 
     .task-item {
       display: flex;
-      align-items: center;
-      margin-bottom: 10px;
+      flex-direction: row;
+      align-items: flex-start;
+      margin-bottom: 20px;
+      grid-gap: 20px;
       color: white;
-      border: 1px solid black;
       padding: 5px;
     }
 
@@ -36,7 +37,7 @@
     }
 
     .task-item button {
-      margin-left: 10px;
+      margin-left: 0px;
     }
 
     .task-item.completed {
@@ -66,7 +67,10 @@
       {% for task in tasks %}
       <li id="task-item-{{ task.id }}" class="task-item {% if task.completed %}completed{% endif %}">
         <input type="checkbox" data-task-id="{{ task.id }}" onchange="markTaskAsCompleted(this)">
-        <span class="task-title">{{ task.title }}</span>
+        <h3 class="task-title">{{ task.title }}</h3>
+        <p class="task-description">Description: {{ task.description }}</p>
+        <p class="task-priority">Priority: {{ task.priority }}</p>
+        <p class="task-due-date">Due Date: {{ task.due_date }}</p>
         <button onclick="openEditDialog('{{ task.id }}')">Edit</button>
         <button onclick="deleteTask('{{ task.id }}')">Delete</button>
       </li>
@@ -91,6 +95,8 @@
   </div>
 
   <script>
+    // Funkcje do obsługi zadań
+
     // Funkcja do dodawania zadania do listy
     function addTask() {
       const titleInput = document.getElementById('title-input');
@@ -110,7 +116,6 @@
       // Wysyłanie zadania do serwera (np. za pomocą AJAX lub fetch())
       // i dodawanie nowego zadania do listy po otrzymaniu odpowiedzi sukcesu
 
-      // Przykład:
       fetch('/api/tasks/', {
         method: 'POST',
         headers: {
@@ -143,9 +148,7 @@
       const taskId = checkbox.dataset.taskId;
       const completed = checkbox.checked;
 
-      // Aktualizacja stanu zadania na serwerze (np. za pomocą AJAX lub fetch())
 
-      // Przykład:
       fetch(`/api/tasks/${taskId}/`, {
         method: 'PATCH',
         headers: {
@@ -157,7 +160,6 @@
       .then(data => {
         // Oznacz zadanie jako wykonane na liście po otrzymaniu odpowiedzi sukcesu
 
-        // Przykład:
         const taskItem = document.getElementById(`task-item-${taskId}`);
         if (completed) {
           taskItem.classList.add('completed');
@@ -205,9 +207,6 @@
         task.priority = parseInt(priorityInput.value);
         task.due_date = dueDateInput.value;
 
-        // Aktualizacja zadania na serwerze (np. za pomocą AJAX lub fetch())
-
-        // Przykład:
         fetch(`/api/tasks/${task.id}/`, {
           method: 'PUT',
           headers: {
@@ -219,7 +218,6 @@
         .then(data => {
           // Zaktualizuj zadanie na liście po otrzymaniu odpowiedzi sukcesu
 
-          // Przykład:
           const taskItem = document.getElementById(`task-item-${task.id}`);
           taskItem.querySelector('.task-title').textContent = task.title;
 
@@ -241,16 +239,13 @@
 
     // Funkcja do usuwania zadania
     function deleteTask(taskId) {
-      // Usunięcie zadania z serwera (np. za pomocą AJAX lub fetch())
 
-      // Przykład:
       fetch(`/api/tasks/${taskId}/`, {
         method: 'DELETE',
       })
       .then(response => {
         // Usuń zadanie z listy po otrzymaniu odpowiedzi sukcesu
 
-        // Przykład:
         const taskItem = document.getElementById(`task-item-${taskId}`);
         taskItem.remove();
       })
@@ -282,8 +277,23 @@
 
       const titleSpan = document.createElement('span');
       titleSpan.className = 'task-title';
-      titleSpan.textContent = task.title;
+      titleSpan.textContent = `Title: ${task.title}`;
       taskItem.appendChild(titleSpan);
+
+      const descriptionSpan = document.createElement('span');
+      descriptionSpan.className = 'task-description';
+      descriptionSpan.textContent = `Description: ${task.description}`;
+      taskItem.appendChild(descriptionSpan);
+
+      const prioritySpan = document.createElement('span');
+      prioritySpan.className = 'task-priority';
+      prioritySpan.textContent = `Priority: ${task.priority}`;
+      taskItem.appendChild(prioritySpan);
+
+      const dueDateSpan = document.createElement('span');
+      dueDateSpan.className = 'task-due-date';
+      dueDateSpan.textContent = `Due Date: ${task.due_date}`;
+      taskItem.appendChild(dueDateSpan);
 
       const editButton = document.createElement('button');
       editButton.textContent = 'Edit';
@@ -304,23 +314,25 @@
 
     // Funkcja do pobierania zadania z listy na podstawie identyfikatora
     function getTaskById(taskId) {
-      // Pobierz zadanie z serwera na podstawie identyfikatora (np. za pomocą AJAX lub fetch())
-      // i zwróć obiekt zadania
+    const taskItem = document.getElementById(`task-item-${taskId}`);
+    if (taskItem) {
+      const title = taskItem.querySelector('.task-title').textContent;
+      const description = taskItem.querySelector('.task-description').textContent;
+      const priority = taskItem.querySelector('.task-priority').textContent;
+      const dueDate = taskItem.querySelector('.task-due-date').textContent;
 
-      // Przykład:
-      const taskItem = document.getElementById(`task-item-${taskId}`);
-      if (taskItem) {
-        return {
-          id: taskId,
-          title: taskItem.querySelector('.task-title').textContent,
-          description: '',
-          priority: 0,
-          due_date: '',
-          completed: taskItem.classList.contains('completed'),
-        };
-      }
-      return null;
+      return {
+        id: taskId,
+        title: title.replace('Title: ', ''),
+        description: description.replace('Description: ', ''),
+        priority: parseInt(priority.replace('Priority: ', ''), 10),
+        due_date: dueDate.replace('Due Date: ', ''),
+        completed: taskItem.classList.contains('completed'),
+      };
     }
+    return null;
+  }
+
 
     // Funkcja do pobierania bieżącej daty w formacie "YYYY-MM-DD"
     function getCurrentDate() {
@@ -330,6 +342,25 @@
       const day = String(now.getDate()).padStart(2, '0');
       return `${year}-${month}-${day}`;
     }
+
+    // Inicjalizacja
+
+    let editTaskId = null;
+
+    // Pobierz listę zadań z serwera
+
+    fetch('/api/tasks/')
+      .then(response => response.json())
+      .then(data => {
+        const taskList = document.getElementById('task-list');
+        data.forEach(task => {
+          const taskItem = createTaskItem(task);
+          taskList.appendChild(taskItem);
+        });
+      })
+      .catch(error => {
+        console.error('Error:', error);
+      });
   </script>
 </body>
 </html>
