@@ -1,25 +1,27 @@
-{% block content %}
 <!DOCTYPE html>
 <html>
 <head>
   <title>Task Manager</title>
   <style>
-    /* Stylizacja wyglądu */
     body {
       display: flex;
-      justify-content: center;
+      flex-direction: column;
       align-items: center;
+      justify-content: center;
       height: 100vh;
       background-image: url("/static/background.jpg");
       background-size: cover;
       background-repeat: no-repeat;
       color: white;
+      font-family: Arial, sans-serif;
     }
+
     .task-list {
       list-style-type: none;
       padding: 0;
       color: white;
     }
+
     .task-item {
       display: flex;
       align-items: center;
@@ -28,188 +30,306 @@
       border: 1px solid black;
       padding: 5px;
     }
-    .task-item input[type="checkbox"] {
-      margin-right: 5px;
+
+    .edit-dialog {
+      display: none;
     }
+
     .task-item button {
       margin-left: 10px;
     }
+
     .task-item.completed {
       text-decoration: line-through;
     }
   </style>
 </head>
 <body>
+  <h1>Task Manager</h1>
+
   <div>
-    <h1 style="text-align: center;">TASK MANAGER</h1>
-
-    <h2 style="color: white;">Add Task</h2>
-    <input type="text" id="task-input" placeholder="Enter task name">
-    <input type="date" id="date-input" max="9999-12-31" required>
+    <h2>Add Task</h2>
+    <label for="title-input">Title:</label>
+    <input type="text" id="title-input" required>
+    <label for="description-input">Description:</label>
+    <textarea id="description-input" required></textarea>
+    <label for="priority-input">Priority:</label>
+    <input type="number" id="priority-input" required>
+    <label for="date-input">Due Date:</label>
+    <input type="date" id="date-input" required>
     <button onclick="addTask()">Add</button>
-
-    <h2 style="color: white;">Task List</h2>
-    <ul id="task-list" class="task-list"></ul>
   </div>
 
-  <dialog id="edit-dialog">
-    <h2>Edit Task</h2>
-    <input type="text" id="edit-task-input" placeholder="Enter task name">
-    <input type="date" id="edit-date-input" max="9999-12-31" required>
-    <button onclick="saveEditedTask()">Save</button>
-    <button onclick="closeEditDialog()">Cancel</button>
-  </dialog>
+  <div>
+    <h2>Task List</h2>
+    <ul id="task-list" class="task-list">
+      {% for task in tasks %}
+      <li id="task-item-{{ task.id }}" class="task-item {% if task.completed %}completed{% endif %}">
+        <input type="checkbox" data-task-id="{{ task.id }}" onchange="markTaskAsCompleted(this)">
+        <span class="task-title">{{ task.title }}</span>
+        <button onclick="openEditDialog('{{ task.id }}')">Edit</button>
+        <button onclick="deleteTask('{{ task.id }}')">Delete</button>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+
+  <div id="edit-dialog" class="edit-dialog">
+    <div class="edit-dialog-content">
+      <h2>Edit Task</h2>
+      <label for="edit-title-input">Title:</label>
+      <input type="text" id="edit-title-input" required>
+      <label for="edit-description-input">Description:</label>
+      <textarea id="edit-description-input" required></textarea>
+      <label for="edit-priority-input">Priority:</label>
+      <input type="number" id="edit-priority-input" required>
+      <label for="edit-date-input">Due Date:</label>
+      <input type="date" id="edit-date-input" required>
+      <button onclick="saveEditedTask()">Save</button>
+      <button onclick="closeEditDialog()">Cancel</button>
+    </div>
+  </div>
 
   <script>
-    let editTaskId; // Identyfikator edytowanego zadania
-
-    // Tworzenie unikalnego identyfikatora dla zadania
-    function generateId() {
-      return '_' + Math.random().toString(36).substr(2, 9);
-    }
-
     // Funkcja do dodawania zadania do listy
     function addTask() {
-      const taskInput = document.getElementById('task-input');
-      const taskName = taskInput.value.trim();
-      const dateInput = document.getElementById('date-input');
-      const taskDate = dateInput.value;
-      
-      if (taskName !== '') {
-        const taskId = generateId(); // Unikalny identyfikator zadania
-        const taskList = document.getElementById('task-list');
+      const titleInput = document.getElementById('title-input');
+      const descriptionInput = document.getElementById('description-input');
+      const priorityInput = document.getElementById('priority-input');
+      const dueDateInput = document.getElementById('date-input');
 
-        // Tworzenie elementów HTML dla zadania
-        const listItem = document.createElement('li');
-        listItem.classList.add('task-item');
-        listItem.setAttribute('data-task-id', taskId);
-        const checkbox = document.createElement('input');
-        checkbox.type = 'checkbox';
-        checkbox.addEventListener('change', () => {
-          markTaskAsCompleted(checkbox);
-        });
-        const taskText = document.createElement('span');
-        taskText.textContent = taskName;
-        const taskDateElement = document.createElement('span');
-        taskDateElement.textContent = taskDate;
-        const editButton = document.createElement('button');
-        editButton.textContent = 'Edit';
-        editButton.addEventListener('click', () => {
-          openEditDialog(taskId);
-        });
-        const deleteButton = document.createElement('button');
-        deleteButton.textContent = 'Delete';
-        deleteButton.addEventListener('click', () => {
-          deleteTask(taskId);
-        });
+      const task = {
+        id: generateId(),
+        title: titleInput.value,
+        description: descriptionInput.value,
+        priority: parseInt(priorityInput.value),
+        due_date: dueDateInput.value,
+        completed: false
+      };
 
-        // Dodawanie elementów do listy
-        listItem.appendChild(checkbox);
-        listItem.appendChild(taskText);
-        listItem.appendChild(taskDateElement);
-        listItem.appendChild(editButton);
-        listItem.appendChild(deleteButton);
-        taskList.appendChild(listItem);
+      // Wysyłanie zadania do serwera (np. za pomocą AJAX lub fetch())
+      // i dodawanie nowego zadania do listy po otrzymaniu odpowiedzi sukcesu
 
-        // Wyczyszczenie pól wprowadzania po dodaniu zadania
-        taskInput.value = '';
-        dateInput.value = '';
+      // Przykład:
+      fetch('/api/tasks/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(task),
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.id) {
+          // Dodaj zadanie do listy
+          const taskList = document.getElementById('task-list');
+          const taskItem = createTaskItem(task);
+          taskList.appendChild(taskItem);
 
-        // Ustawienie dzisiejszej daty dla kolejnego zadania
-        const today = new Date();
-        const year = today.getFullYear();
-        let month = today.getMonth() + 1;
-        if (month < 10) {
-          month = '0' + month;
+          // Wyczyść pola formularza
+          titleInput.value = '';
+          descriptionInput.value = '';
+          priorityInput.value = '';
+          dueDateInput.value = getCurrentDate();
         }
-        let day = today.getDate();
-        if (day < 10) {
-          day = '0' + day;
-        }
-        const formattedDate = `${year}-${month}-${day}`;
-        dateInput.value = formattedDate;
-      }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+      });
     }
 
     // Funkcja do zaznaczania zadania jako wykonane
     function markTaskAsCompleted(checkbox) {
-      const listItem = checkbox.parentNode;
-      if (checkbox.checked) {
-        listItem.classList.add('completed');
-      } else {
-        listItem.classList.remove('completed');
-      }
+      const taskId = checkbox.dataset.taskId;
+      const completed = checkbox.checked;
+
+      // Aktualizacja stanu zadania na serwerze (np. za pomocą AJAX lub fetch())
+
+      // Przykład:
+      fetch(`/api/tasks/${taskId}/`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ completed }),
+      })
+      .then(response => response.json())
+      .then(data => {
+        // Oznacz zadanie jako wykonane na liście po otrzymaniu odpowiedzi sukcesu
+
+        // Przykład:
+        const taskItem = document.getElementById(`task-item-${taskId}`);
+        if (completed) {
+          taskItem.classList.add('completed');
+        } else {
+          taskItem.classList.remove('completed');
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+      });
     }
 
     // Funkcja do otwierania okna dialogowego edycji zadania
     function openEditDialog(taskId) {
-      const listItem = document.querySelector(`[data-task-id="${taskId}"]`);
-      if (listItem) {
-        const taskText = listItem.querySelector('span');
-        const taskInput = document.getElementById('edit-task-input');
-        const dateInput = document.getElementById('edit-date-input');
-        const taskDate = listItem.querySelector('span:nth-of-type(2)').textContent;
+      editTaskId = taskId;
+      const task = getTaskById(taskId);
+      if (task) {
+        const titleInput = document.getElementById('edit-title-input');
+        const descriptionInput = document.getElementById('edit-description-input');
+        const priorityInput = document.getElementById('edit-priority-input');
+        const dueDateInput = document.getElementById('edit-date-input');
 
-        taskInput.value = taskText.textContent;
-        dateInput.value = taskDate;
-        editTaskId = taskId;
+        titleInput.value = task.title;
+        descriptionInput.value = task.description;
+        priorityInput.value = task.priority;
+        dueDateInput.value = task.due_date;
 
-        const dialog = document.getElementById('edit-dialog');
-        dialog.showModal();
+        // Pokaż okno dialogowe edycji
+        const editDialog = document.getElementById('edit-dialog');
+        editDialog.style.display = 'block';
       }
     }
 
     // Funkcja do zapisywania edytowanego zadania
     function saveEditedTask() {
-      const taskInput = document.getElementById('edit-task-input');
-      const taskName = taskInput.value.trim();
-      const dateInput = document.getElementById('edit-date-input');
-      const taskDate = dateInput.value;
-      
-      if (taskName !== '') {
-        const listItem = document.querySelector(`[data-task-id="${editTaskId}"]`);
-        if (listItem) {
-          const taskText = listItem.querySelector('span');
-          const taskDateElement = listItem.querySelector('span:nth-of-type(2)');
+      const task = getTaskById(editTaskId);
+      if (task) {
+        const titleInput = document.getElementById('edit-title-input');
+        const descriptionInput = document.getElementById('edit-description-input');
+        const priorityInput = document.getElementById('edit-priority-input');
+        const dueDateInput = document.getElementById('edit-date-input');
 
-          taskText.textContent = taskName;
-          taskDateElement.textContent = taskDate;
+        task.title = titleInput.value;
+        task.description = descriptionInput.value;
+        task.priority = parseInt(priorityInput.value);
+        task.due_date = dueDateInput.value;
 
-          const dialog = document.getElementById('edit-dialog');
-          dialog.close();
-        }
+        // Aktualizacja zadania na serwerze (np. za pomocą AJAX lub fetch())
+
+        // Przykład:
+        fetch(`/api/tasks/${task.id}/`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(task),
+        })
+        .then(response => response.json())
+        .then(data => {
+          // Zaktualizuj zadanie na liście po otrzymaniu odpowiedzi sukcesu
+
+          // Przykład:
+          const taskItem = document.getElementById(`task-item-${task.id}`);
+          taskItem.querySelector('.task-title').textContent = task.title;
+
+          // Zamknij okno dialogowe edycji
+          closeEditDialog();
+        })
+        .catch(error => {
+          console.error('Error:', error);
+        });
       }
     }
 
     // Funkcja do zamykania okna dialogowego edycji zadania
     function closeEditDialog() {
-      const dialog = document.getElementById('edit-dialog');
-      dialog.close();
+      editTaskId = null;
+      const editDialog = document.getElementById('edit-dialog');
+      editDialog.style.display = 'none';
     }
 
     // Funkcja do usuwania zadania
     function deleteTask(taskId) {
-      const listItem = document.querySelector(`[data-task-id="${taskId}"]`);
-      if (listItem) {
-        listItem.remove();
-      }
+      // Usunięcie zadania z serwera (np. za pomocą AJAX lub fetch())
+
+      // Przykład:
+      fetch(`/api/tasks/${taskId}/`, {
+        method: 'DELETE',
+      })
+      .then(response => {
+        // Usuń zadanie z listy po otrzymaniu odpowiedzi sukcesu
+
+        // Przykład:
+        const taskItem = document.getElementById(`task-item-${taskId}`);
+        taskItem.remove();
+      })
+      .catch(error => {
+        console.error('Error:', error);
+      });
     }
 
-    // Ustawienie domyślnej wartości dzisiejszej daty
-    const today = new Date();
-    const dateInput = document.getElementById('date-input');
-    const year = today.getFullYear();
-    let month = today.getMonth() + 1;
-    if (month < 10) {
-      month = '0' + month;
+    // Inne pomocnicze funkcje
+
+    // Funkcja do generowania unikalnego identyfikatora dla zadania
+    function generateId() {
+      return Math.random().toString(36).substr(2, 9);
     }
-    let day = today.getDate();
-    if (day < 10) {
-      day = '0' + day;
+
+    // Funkcja do tworzenia elementu listy zadania
+    function createTaskItem(task) {
+      const taskItem = document.createElement('li');
+      taskItem.id = `task-item-${task.id}`;
+      taskItem.className = `task-item ${task.completed ? 'completed' : ''}`;
+
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.dataset.taskId = task.id;
+      checkbox.onchange = function () {
+        markTaskAsCompleted(this);
+      };
+      taskItem.appendChild(checkbox);
+
+      const titleSpan = document.createElement('span');
+      titleSpan.className = 'task-title';
+      titleSpan.textContent = task.title;
+      taskItem.appendChild(titleSpan);
+
+      const editButton = document.createElement('button');
+      editButton.textContent = 'Edit';
+      editButton.onclick = function () {
+        openEditDialog(task.id);
+      };
+      taskItem.appendChild(editButton);
+
+      const deleteButton = document.createElement('button');
+      deleteButton.textContent = 'Delete';
+      deleteButton.onclick = function () {
+        deleteTask(task.id);
+      };
+      taskItem.appendChild(deleteButton);
+
+      return taskItem;
     }
-    const formattedDate = `${year}-${month}-${day}`;
-    dateInput.value = formattedDate;
+
+    // Funkcja do pobierania zadania z listy na podstawie identyfikatora
+    function getTaskById(taskId) {
+      // Pobierz zadanie z serwera na podstawie identyfikatora (np. za pomocą AJAX lub fetch())
+      // i zwróć obiekt zadania
+
+      // Przykład:
+      const taskItem = document.getElementById(`task-item-${taskId}`);
+      if (taskItem) {
+        return {
+          id: taskId,
+          title: taskItem.querySelector('.task-title').textContent,
+          description: '',
+          priority: 0,
+          due_date: '',
+          completed: taskItem.classList.contains('completed'),
+        };
+      }
+      return null;
+    }
+
+    // Funkcja do pobierania bieżącej daty w formacie "YYYY-MM-DD"
+    function getCurrentDate() {
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const day = String(now.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
   </script>
 </body>
 </html>
-{% endblock %}

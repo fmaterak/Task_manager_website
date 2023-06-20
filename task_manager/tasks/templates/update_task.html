@@ -1,10 +1,5 @@
-{% extends 'index.html' %}
-
-{% block content %}
-  <h1>Update Task</h1>
-  <form method="post">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">Update</button>
-  </form>
-{% endblock %}
+<form action="{% url 'update_task' task.id %}" method="POST">
+  {% csrf_token %}
+  {{ form.as_p }}
+  <button type="submit">Zapisz zmiany</button>
+</form>
