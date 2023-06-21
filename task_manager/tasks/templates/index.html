@@ -195,40 +195,43 @@
 
     // Funkcja do zapisywania edytowanego zadania
     function saveEditedTask() {
-      const task = getTaskById(editTaskId);
-      if (task) {
-        const titleInput = document.getElementById('edit-title-input');
-        const descriptionInput = document.getElementById('edit-description-input');
-        const priorityInput = document.getElementById('edit-priority-input');
-        const dueDateInput = document.getElementById('edit-date-input');
+    const task = getTaskById(editTaskId);
+    if (task) {
+      const titleInput = document.getElementById('edit-title-input');
+      const descriptionInput = document.getElementById('edit-description-input');
+      const priorityInput = document.getElementById('edit-priority-input');
+      const dueDateInput = document.getElementById('edit-date-input');
 
-        task.title = titleInput.value;
-        task.description = descriptionInput.value;
-        task.priority = parseInt(priorityInput.value);
-        task.due_date = dueDateInput.value;
+      task.title = titleInput.value;
+      task.description = descriptionInput.value;
+      task.priority = parseInt(priorityInput.value);
+      task.due_date = dueDateInput.value;
 
-        fetch(`/api/tasks/${task.id}/`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(task),
-        })
-        .then(response => response.json())
-        .then(data => {
-          // Zaktualizuj zadanie na liście po otrzymaniu odpowiedzi sukcesu
+      fetch(`/api/tasks/${task.id}/`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(task),
+      })
+      .then(response => response.json())
+      .then(data => {
+        // Zaktualizuj zadanie na liście po otrzymaniu odpowiedzi sukcesu
 
-          const taskItem = document.getElementById(`task-item-${task.id}`);
-          taskItem.querySelector('.task-title').textContent = task.title;
+        const taskItem = document.getElementById(`task-item-${task.id}`);
+        taskItem.querySelector('.task-title').textContent = task.title;
+        taskItem.querySelector('.task-description').textContent = `Description: ${task.description}`;
+        taskItem.querySelector('.task-priority').textContent = `Priority: ${task.priority}`;
+        taskItem.querySelector('.task-due-date').textContent = `Due Date: ${task.due_date}`;
 
-          // Zamknij okno dialogowe edycji
-          closeEditDialog();
-        })
-        .catch(error => {
-          console.error('Error:', error);
-        });
-      }
+        // Zamknij okno dialogowe edycji
+        closeEditDialog();
+      })
+      .catch(error => {
+        console.error('Error:', error);
+      });
     }
+  }
 
     // Funkcja do zamykania okna dialogowego edycji zadania
     function closeEditDialog() {
